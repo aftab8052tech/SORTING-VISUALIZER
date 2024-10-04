@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SORTING VISUALIZER</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #EAEAEA;
+            font-family: Arial, sans-serif;
+            margin-bottom: 100px;
+        }
+        h1 {
+            margin: 30px;
+            padding: 10px;
+            background-color: #DBDBDB;
+            border: 3px solid #00897b;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 2em;
+            color: #00897b;
+            width: 60%;
+        }
+        #controls {
+            display: flex;
+            justify-content: space-evenly;
+            width: 70vw;
+            margin-bottom: 10px;
+        }
+        .control-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .control-section {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+        }
+        .control-section label {
+            margin-right: 10px;
+            font-weight: bold;
+            color: #131312;
+        }
+        .control-section input[type="range"] {
+            width: 200px;
+        }
+        .buttons-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #DBDBDB;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid black;
+           
+            width: 40%;
+        }
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border-color: white;
+            border-radius: 5px;
+            background-color: #00897b;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button.active {
+            background-color: #66624e;
+            color: white;
+        }
+        button:hover {
+            background-color: #033933;
+        }
+        .sort-button-box {
+            background-color: #ada996;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid black;
+            margin-top: 35px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 70%;
+        }
+        .sort-button {
+            background-color: #eaeaea;
+            border-color: black;
+            border-radius: 6px;
+            color: #131312;
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .sort-button.active {
+            background-color: #20b75d;
+            color: black;
+        }
+        .sort-button:hover {
+            background-color: #6a675a;
+            color: white;
+            border-color: white;
+        }
+        #array-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 450px;
+            width: 70vw;
+            margin-top: 20px;
+            border: 2px solid #333;
+            background-color: white;
+        }
+        .array-bar {
+            margin: 1px;
+            background-color: #4caf50;
+        }
+        .array-bar.active {
+            background-color: #e91e63;
+        }
+    </style>
+</head>
+<body>
+    <h1>SORTING VISUALIZER</h1>
+
+    <div id="controls">
+        <div class="control-column">
+            <div class="control-section">
+                <label for="arraySize">ARRAY SIZE:</label>
+                <input type="range" id="arraySize" min="10" max="100" value="50" onchange="generateArray()">
+            </div>
+            <div class="control-section">
+                <label for="speed">SPEED:</label>
+                <input type="range" id="speed" min="10" max="1000" value="500">
+            </div>
+        </div>
+        <div class="buttons-box">
+            <div class="buttons-container">
+                <button id="generateArrayBtn" onclick="generateArray()">Generate New Array</button>
+                <button id="stopBtn" onclick="stopSorting()">Stop</button>
+                <button id="startBtn" onclick="startSorting()">Start</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="sort-button-box">
+        <div class="buttons-container">
+            <button class="sort-button" onclick="highlightButton(this); bubbleSort()">Bubble Sort</button>
+            <button class="sort-button" onclick="highlightButton(this); insertionSort()">Insertion Sort</button>
+            <button class="sort-button" onclick="highlightButton(this); selectionSort()">Selection Sort</button>
+            <button class="sort-button" onclick="highlightButton(this); mergeSort()">Merge Sort</button>
+            <button class="sort-button" onclick="highlightButton(this); quickSort()">Quick Sort</button>
+        </div>
+    </div>
+
+    <div id="array-container"></div>
+
+    <script>
+        let array = [];
+        let arraySize = document.getElementById('arraySize').value;
+        let speed = document.getElementById('speed').value;
+        const container = document.getElementById('array-container');
+        let currentActiveButton = null;
+        let stopFlag = false;
+        let paused = false;
+
+        function generateArray() {
+            array = [];
+            container.innerHTML = '';
+            arraySize = document.getElementById('arraySize').value;
+            for (let i = 0; i < arraySize; i++) {
+                array.push(Math.floor(Math.random() * 400) + 1);
+            }
+            renderArray();
+        }
+
+        function renderArray() {
+            container.innerHTML = '';
+            array.forEach((height, idx) => {
+                const bar = document.createElement('div');
+                bar.style.height = `${height}px`;
+                bar.style.width = `${100 / arraySize}%`;
+                bar.classList.add('array-bar');
+                container.appendChild(bar);
+            });
+        }
+
+        function swap(el1, el2) {
+            let temp = el1.style.height;
+            el1.style.height = el2.style.height;
+            el2.style.height = temp;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function highlightButton(button) {
+            if (currentActiveButton) {
+                currentActiveButton.classList.remove('active');
+            }
+            button.classList.add('active');
+            currentActiveButton = button;
+        }
+
+        function stopSorting() {
+            stopFlag = true;
+            paused = true;
+        }
+
+        function startSorting() {
+            stopFlag = false;
+            paused = false;
+            if (currentActiveButton) {
+                currentActiveButton.click();
+            }
+        }
+
+        async function bubbleSort() {
+            let bars = document.getElementsByClassName('array-bar');
+            for (let i = 0; i < array.length - 1; i++) {
+                for (let j = 0; j < array.length - i - 1; j++) {
+                    if (stopFlag) return;
+                    while (paused) await sleep(50);
+                    bars[j].classList.add('active');
+                    bars[j + 1].classList.add('active');
+                    if (array[j] > array[j + 1]) {
+                        swap(bars[j], bars[j + 1]);
+                        [array[j], array[j + 1]] = [array[j + 1], array[j]];
+                    }
+                    await sleep(speed);
+                    bars[j].classList.remove('active');
+                    bars[j + 1].classList.remove('active');
+                }
+            }
+            resetArrayBars();
+        }
+
+        async function insertionSort() {
+            let bars = document.getElementsByClassName('array-bar');
+            for (let i = 1; i < array.length; i++) {
+                if (stopFlag) return;
+                while (paused) await sleep(50);
+                let key = array[i];
+                let j = i - 1;
+                bars[i].classList.add('active');
+                while (j >= 0 && array[j] > key) {
+                    if (stopFlag) return;
+                    while (paused) await sleep(50);
+                    array[j + 1] = array[j];
+                    bars[j + 1].style.height = `${array[j]}px`;
+                    await sleep(speed);
+                    j--;
+                }
+                array[j + 1] = key;
+                bars[j + 1].style.height = `${key}px`;
+                bars[i].classList.remove('active');
+            }
+            resetArrayBars();
+        }
+
+        async function selectionSort() {
+            let bars = document.getElementsByClassName('array-bar');
+            for (let i = 0; i < array.length - 1; i++) {
+                if (stopFlag) return;
+                while (paused) await sleep(50);
+                let minIdx = i;
+                bars[i].classList.add('active');
+                for (let j = i + 1; j < array.length; j++) {
+                    if (stopFlag) return;
+                    while (paused) await sleep(50);
+                    if (array[j] < array[minIdx]) {
+                        if (minIdx !== i) {
+                            bars[minIdx].classList.remove('active');
+                        }
+                        minIdx = j;
+                        bars[minIdx].classList.add('active');
+                    }
+                }
+                if (minIdx !== i) {
+                    swap(bars[i], bars[minIdx]);
+                    [array[i], array[minIdx]] = [array[minIdx], array[i]];
+                }
+                await sleep(speed);
+                bars[i].classList.remove('active');
+            }
+            resetArrayBars();
+        }
+
+        async function mergeSort(start = 0, end = array.length - 1) {
+            if (stopFlag) return;
+            while (paused) await sleep(50);
+            if (start < end) {
+                let mid = Math.floor((start + end) / 2);
+                await mergeSort(start, mid);
+                await mergeSort(mid + 1, end);
+                await merge(start, mid, end);
+            }
+            if (start === 0 && end === array.length - 1) {
+                resetArrayBars();
+            }
+        }
+
+        async function merge(start, mid, end) {
+            let bars = document.getElementsByClassName('array-bar');
+            let leftArray = array.slice(start, mid + 1);
+            let rightArray = array.slice(mid + 1, end + 1);
+            let i = 0, j = 0, k = start;
+            while (i < leftArray.length && j < rightArray.length) {
+                if (stopFlag) return;
+                while (paused) await sleep(50);
+                if (leftArray[i] <= rightArray[j]) {
+                    array[k] = leftArray[i];
+                    bars[k].style.height = `${leftArray[i]}px`;
+                    i++;
+                } else {
+                    array[k] = rightArray[j];
+                    bars[k].style.height = `${rightArray[j]}px`;
+                    j++;
+                }
+                await sleep(speed);
+                k++;
+            }
+            while (i < leftArray.length) {
+                if (stopFlag) return;
+                array[k] = leftArray[i];
+                bars[k].style.height = `${leftArray[i]}px`;
+                await sleep(speed);
+                i++;
+                k++;
+            }
+            while (j < rightArray.length) {
+                if (stopFlag) return;
+                array[k] = rightArray[j];
+                bars[k].style.height = `${rightArray[j]}px`;
+                await sleep(speed);
+                j++;
+                k++;
+            }
+        }
+
+        async function quickSort(low = 0, high = array.length - 1) {
+            if (stopFlag) return;
+            while (paused) await sleep(50);
+            if (low < high) {
+                let pivotIdx = await partition(low, high);
+                await quickSort(low, pivotIdx - 1);
+                await quickSort(pivotIdx + 1, high);
+            }
+            if (low === 0 && high === array.length - 1) {
+                resetArrayBars();
+            }
+        }
+
+        async function partition(low, high) {
+            let bars = document.getElementsByClassName('array-bar');
+            let pivot = array[high];
+            let i = low - 1;
+            bars[high].classList.add('active');
+            for (let j = low; j < high; j++) {
+                if (stopFlag) return;
+                while (paused) await sleep(50);
+                bars[j].classList.add('active');
+                if (array[j] < pivot) {
+                    i++;
+                    swap(bars[i], bars[j]);
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                await sleep(speed);
+                bars[j].classList.remove('active');
+            }
+            swap(bars[i + 1], bars[high]);
+            [array[i + 1], array[high]] = [array[high], array[i + 1]];
+            bars[high].classList.remove('active');
+            return i + 1;
+        }
+
+        function resetArrayBars() {
+            let bars = document.getElementsByClassName('array-bar');
+            for (let i = 0; i < bars.length; i++) {
+                bars[i].classList.remove('active');
+                bars[i].style.backgroundColor = '#4caf50'; // Set sorted bars to green
+            }
+        }
+
+        window.onload = generateArray;
+    </script>
+</body>
+</html>
